@@ -6,13 +6,13 @@ if(!class_exists('CBWCT_ORDER_TRACKER')) {
 }
 
 // Register Shortcode
-function cbwct_wc_shortcode($attrs, $content = NULL) {
+function cbwct_wc_shortcode($attrs, $content = null) {
 	ob_start();
-	extract(shortcode_atts(array(
+	$cbwct_atts = shortcode_atts(array(
 
 		'post_type' =>'shop_order'
 
-	), $attrs));
+	), $attrs, 'cbwct-order-tracker');
 
 		// get template markup
 		require_once( CBWCT_TRACKER_PATH . '/inc/template-markup.php'); 
