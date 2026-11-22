@@ -35,7 +35,7 @@ if(!class_exists('CBWCT_ORDER_TRACKER')) {
 							foreach ( $cbwct_order->get_items() as $cbwct_item ) :
 								$cbwct_index++;
 						?>
-							<li><a href="<?php echo esc_url( get_permalink( $cbwct_item->get_product_id() ) ); ?>"> <?php echo esc_html( $cbwct_index . '. ' ); echo esc_html( wp_trim_words( $cbwct_item->get_name(), apply_filters( 'cbwct_product_title_trim_words', 8 ), NULL ) ); ?></a></li>
+							<li><a href="<?php echo esc_url( get_permalink( $cbwct_item->get_product_id() ) ); ?>"> <?php echo esc_html( $cbwct_index . '. ' ); echo esc_html( wp_trim_words( $cbwct_item->get_name(), apply_filters( 'cbwct_product_title_trim_words', 8 ), null ) ); ?></a></li>
 						<?php endforeach; ?>
 					</ul>
 				</td>	

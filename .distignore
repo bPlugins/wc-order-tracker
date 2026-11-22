@@ -1,0 +1,32 @@
+# Files and folders excluded from the production zip (bin/build-zip.sh).
+# Patterns are rsync --exclude patterns. vendor/freemius is copied back in by the script.
+/.git
+/.github
+/.gitignore
+/.gitattributes
+/.distignore
+/.editorconfig
+/.phpcs-cache
+/.phpunit.result.cache
+/.claude
+/CLAUDE.md
+/CONTRIBUTING.md
+/README.md
+/bin
+/build
+/coverage
+/node_modules
+/tests
+/plan
+/vendor
+/composer.json
+/composer.lock
+/package.json
+/package-lock.json
+/phpcs.xml.dist
+/phpunit.xml.dist
+.DS_Store
+*.zip
+*.log
+/.playwright-mcp
+/.nvmrc

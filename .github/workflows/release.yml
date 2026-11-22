@@ -1,0 +1,95 @@
+name: Release
+
+# Runs when a release/hotfix PR is merged into main.
+# If the plugin version has no tag yet, it:
+#   1. builds the production zip,
+#   2. creates the vX.Y.Z tag + GitHub Release with the zip attached,
+#   3. opens a PR to sync main back into develop.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Read version
+        id: version
+        run: |
+          version=$(bin/check-version.sh)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Tag v$version already exists — nothing to release."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build production zip
+        if: steps.version.outputs.exists == 'false'
+        id: build
+        run: |
+          bin/build-zip.sh
+          ( cd build && sha256sum "$(basename "$(ls wc-order-tracker-*.zip)")" > wc-order-tracker-${{ steps.version.outputs.version }}.zip.sha256 )
+
+      - name: Release notes from readme.txt changelog
+        if: steps.version.outputs.exists == 'false'
+        run: |
+          v='${{ steps.version.outputs.version }}'
+          awk -v v="$v" '
+            $0 == "= " v " =" { found = 1; next }
+            found && /^= .* =$/ { exit }
+            found && /^== / { exit }
+            found { print }
+          ' readme.txt | sed '/^[[:space:]]*$/d' > build/notes.md
+          if [ ! -s build/notes.md ]; then
+            echo "Release v$v." > build/notes.md
+          fi
+          printf '\n---\n**Install:** download `wc-order-tracker-%s.zip` below → WordPress → Plugins → Add New → Upload Plugin.\n' "$v" >> build/notes.md
+          cat build/notes.md
+
+      - name: Create tag and GitHub Release
+        if: steps.version.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create '${{ steps.version.outputs.tag }}' \
+            "${{ steps.build.outputs.zip }}" \
+            "build/wc-order-tracker-${{ steps.version.outputs.version }}.zip.sha256" \
+            --target "$GITHUB_SHA" \
+            --title '${{ steps.version.outputs.tag }}' \
+            --notes-file build/notes.md \
+            --latest
+
+      - name: Open PR to sync main back into develop
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin develop
+          if [ "$(git rev-list --count origin/develop..origin/main)" = "0" ]; then
+            echo "develop already contains main — nothing to sync."
+            exit 0
+          fi
+          existing=$(gh pr list --base develop --head main --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            echo "Sync PR #$existing already open."
+            exit 0
+          fi
+          gh pr create --base develop --head main \
+            --title "chore: sync main into develop after ${{ steps.version.outputs.tag }}" \
+            --body "Automated after release ${{ steps.version.outputs.tag }}. Merge with a **merge commit** (not squash) so main and develop share history."
