@@ -1,0 +1,20 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Dependencies (dev only). The Freemius SDK in vendor/freemius ships with the plugin.
+/node_modules/
+/vendor/*
+!/vendor/freemius/
+
+# Build output
+/build/
+*.zip
+
+# Tool caches
+.phpunit.result.cache
+.phpcs-cache
+/coverage/
